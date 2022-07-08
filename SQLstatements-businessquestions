@@ -1,0 +1,65 @@
+-- Question 1: Total Price for Each Year
+USE [northwind_dw_assign3]
+GO
+
+SELECT T.Year as Year, SUM(F.TotalPrice) as [Sales Revenue]
+FROM dbo.factOrders F
+inner join dbo.dimTime T on
+	F.OrderDateKey = T.TimeKey
+GROUP BY T.Year
+ORDER BY T.Year;
+
+-- Question 2: Sales Revenue by Category and Year for products purchased by customers who only live in the USA.
+
+USE [northwind_dw_assign3]
+GO
+
+SELECT CategoryName as Category, T.Year as Year, SUM(F.TotalPrice) as [Sales Revenue]
+FROM dbo.factOrders F
+inner join dbo.dimTime T on
+	F.OrderDateKey = T.TimeKey
+ inner join dbo.dimCategories C
+	 on F.CategoryKey = C.CategoryKey
+ inner join dbo.dimCustomers Cu
+	 on F.ProductKey = Cu.CustomerKey
+where Country='USA'
+GROUP BY CategoryName, T.Year
+ORDER BY CategoryName, T.Year;
+
+/*Question 3: List the countries, regions, and the sum of Total Price (displayed as Sales Revenue) of orders purchased in year 1996
+for customers who live in each region of each country. Your result should be alphabetically ordered by Country and Region.*/
+
+USE [northwind_dw_assign3]
+GO
+
+SELECT Country, Region, SUM(F.TotalPrice) as [Sales Revenue]
+FROM dbo.factOrders F
+inner join dbo.dimTime T on
+	F.OrderDateKey = T.TimeKey
+ inner join dbo.dimCustomers Cu
+	 on F.ProductKey = Cu.CustomerKey
+where T.Year = 1996
+GROUP BY Country, Region
+ORDER BY Country, Region;
+
+/*Question 4: List the countries, their best-selling product, and the sum of Total Price (displayed as Sales Revenue)
+ordered by Country and Product Name.*/
+
+USE [northwind_dw_assign3]
+GO
+
+with temp as (SELECT Country, ProductName as [Product Name], SUM(F.TotalPrice) as [Sales Revenue]
+FROM dbo.factOrders F
+ inner join dbo.dimProducts P
+	 on F.ProductKey = P.ProductKey
+GROUP BY Country, ProductName),
+
+temp1 as (
+	select Country,[Product Name],
+		[Sales Revenue],
+		ROW_NUMBER() OVER (PARTITION BY Country ORDER BY [Sales Revenue] DESC) AS RANK
+	FROM temp
+)
+select Country,[Product Name],
+ [Sales Revenue] from temp1 where rank = 1
+  ORDER BY Country, [Product Name];
